@@ -11,11 +11,6 @@
           <e p="PrescriptionsController.cs" t="Include" />
         </e>
         <e p="Models" t="Include">
-          <e p="DTOs" t="Include">
-            <e p="Requests" t="Include">
-              <e p="AddMedicamentsRequest.cs" t="Include" />
-            </e>
-          </e>
           <e p="Medicament.cs" t="Include" />
           <e p="Prescription.cs" t="Include" />
         </e>

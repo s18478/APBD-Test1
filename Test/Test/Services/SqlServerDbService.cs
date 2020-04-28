@@ -86,10 +86,12 @@ namespace Test.Services
                 {
                     foreach (var medicament in medicaments)
                     {
+                        comm.Parameters.Clear();
+                        
                         comm.CommandText = "SELECT IdMedicament FROM Medicament WHERE IdMedicament = @id";
                         comm.Parameters.AddWithValue("id", medicament.IdMedicament);
                         var reader = comm.ExecuteReader();
-
+                    
                         if (!reader.Read())
                         {
                             reader.Close();
@@ -98,19 +100,21 @@ namespace Test.Services
                         }
                         else
                         {
-                            
+                            reader.Close();
                             comm.CommandText =
-                                "INSERT INTO Prescription_Medicament VALUES @id, @idPrescription, @dose, @details";
+                                "INSERT INTO Prescription_Medicament VALUES (@id, @idPrescription, @dose, @details)";
+                            comm.Parameters.AddWithValue("idPrescription", idPrescription);
                             comm.Parameters.AddWithValue("dose", medicament.Dose);
                             comm.Parameters.AddWithValue("details", medicament.Details);
                             var write = comm.ExecuteNonQuery();
                         }
                     }
+                    transaction.Commit();
                 }
                 catch (SqlException exc)
                 {
                     transaction.Rollback();
-                    throw new Exception(exc.Message);
+                    throw new Exception(exc.Message + exc.LineNumber);
                 }
             }
 
