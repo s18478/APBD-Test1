@@ -49,5 +49,72 @@ namespace Test.Services
 
             return prescriptions;
         }
+
+        public bool ExistsPrescription(int idPrescription)
+        {
+            using (var conn = new SqlConnection(connecionString))
+            using (var comm = new SqlCommand())
+            {
+                conn.Open();
+                comm.Connection = conn;
+
+                comm.CommandText = "SELECT IdPrescription FROM Prescription WHERE IdPrescription = @id";
+                comm.Parameters.AddWithValue("id", idPrescription);
+                var reader = comm.ExecuteReader();
+
+                if (!reader.Read())
+                {
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
+        public List<Medicament> AddMedicaments(List<Medicament> medicaments, int idPrescription)
+        {
+            using (var conn = new SqlConnection(connecionString))
+            using (var comm = new SqlCommand())
+            {
+                conn.Open();
+                comm.Connection = conn;
+                SqlTransaction transaction = conn.BeginTransaction();
+                comm.Transaction = transaction;
+                comm.Parameters.AddWithValue("idPrescription", idPrescription);
+                
+                try
+                {
+                    foreach (var medicament in medicaments)
+                    {
+                        comm.CommandText = "SELECT IdMedicament FROM Medicament WHERE IdMedicament = @id";
+                        comm.Parameters.AddWithValue("id", medicament.IdMedicament);
+                        var reader = comm.ExecuteReader();
+
+                        if (!reader.Read())
+                        {
+                            reader.Close();
+                            transaction.Rollback();
+                            throw new Exception("Medicament does not exist");
+                        }
+                        else
+                        {
+                            
+                            comm.CommandText =
+                                "INSERT INTO Prescription_Medicament VALUES @id, @idPrescription, @dose, @details";
+                            comm.Parameters.AddWithValue("dose", medicament.Dose);
+                            comm.Parameters.AddWithValue("details", medicament.Details);
+                            var write = comm.ExecuteNonQuery();
+                        }
+                    }
+                }
+                catch (SqlException exc)
+                {
+                    transaction.Rollback();
+                    throw new Exception(exc.Message);
+                }
+            }
+
+            return medicaments;
+        }
     }
 }
