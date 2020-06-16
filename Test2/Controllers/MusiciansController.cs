@@ -32,9 +32,15 @@ namespace Test2.Controllers
         [HttpPost] 
         public IActionResult AddMusician(AddMusicianRequest request)
         {
-            _service.AddMusician(request);
-            return Ok();
+            try
+            {
+                _service.AddMusician(request);
+                return Ok();
+            }
+            catch (MusicianDoesNotAddedException exc)
+            {
+                return BadRequest(exc.Message);
+            }
         }
-
     }
 }

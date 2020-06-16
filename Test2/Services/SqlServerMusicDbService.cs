@@ -1,5 +1,6 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using Test2.Exceptions;
@@ -49,46 +50,57 @@ namespace Test2.Services
 
         public void AddMusician(AddMusicianRequest request)
         {
-            if (request.Track != null)
+            using (var transaction = _context.Database.BeginTransaction())
             {
-                var track = GetTrackByName(request.Track.TrackName);
-
-                if (track == null)
+                try
                 {
-                    _context.Add(request.Track);
+                    if (request.Track != null)
+                    {
+                        var track = GetTrackByName(request.Track.TrackName);
+
+                        if (track == null)
+                        {
+                            _context.Add(request.Track);
+                            _context.SaveChanges();
+                        }
+                    }
+
+                    var trackId = GetTrackByName(request.Track.TrackName).IdTrack;
+
+                    var Musician = new Musician
+                    {
+                        FirstName = request.FirstName,
+                        LastName = request.LastName,
+                        Nickname = request.Nickname
+                    };
+
+                    _context.Musicians.Add(Musician);
+
+                    var MusicianTrack = new MusicianTrack
+                    {
+                        IdTrack = trackId,
+                        IdMusician = _context.Musicians
+                                .Where(p => p.FirstName == Musician.FirstName && p.LastName == Musician.LastName)
+                                .FirstOrDefault().IdMusician
+
+                    };
+
+                    _context.MusicianTracks.Add(MusicianTrack);
                     _context.SaveChanges();
+
+                    transaction.Commit();
+                } catch (Exception exc) 
+                {
+                    transaction.Rollback();
+                    throw new MusicianDoesNotAddedException("Uncorrect requst!");
                 }
             }
-
-            var trackId = GetTrackByName(request.Track.TrackName).IdTrack;
-
-            var Musician = new Musician
-            {
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                Nickname = request.Nickname
-            };
-
-            _context.Musicians.Add(Musician);
- 
-            var MusicianTrack = new MusicianTrack
-            {
-                IdTrack = trackId,
-                IdMusician = _context.Musicians
-                        .Where(p => p.FirstName == Musician.FirstName && p.LastName == Musician.LastName)
-                        .FirstOrDefault().IdMusician
-
-            };
-
-            _context.MusicianTracks.Add(MusicianTrack);
-            _context.SaveChanges();
+                
         }
 
         public Track GetTrackByName(string trackName)
         {
             return _context.Tracks.SingleOrDefault(p => p.TrackName.Equals(trackName));
         }
-    }
-
-    
+    } 
 }
