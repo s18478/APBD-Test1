@@ -1,8 +1,10 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using Test2.Exceptions;
 using Test2.Models;
+using Test2.Models.DTOs.Requests;
 using Test2.Models.DTOs.Responses;
 
 namespace Test2.Services
@@ -15,6 +17,8 @@ namespace Test2.Services
         {
             _context = context;
         }
+
+        
 
         public GetMusicianResponse GetMusician(int id)
         {
@@ -42,5 +46,49 @@ namespace Test2.Services
 
             return response;
         }
+
+        public void AddMusician(AddMusicianRequest request)
+        {
+            if (request.Track != null)
+            {
+                var track = GetTrackByName(request.Track.TrackName);
+
+                if (track == null)
+                {
+                    _context.Add(request.Track);
+                    _context.SaveChanges();
+                }
+            }
+
+            var trackId = GetTrackByName(request.Track.TrackName).IdTrack;
+
+            var Musician = new Musician
+            {
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                Nickname = request.Nickname
+            };
+
+            _context.Musicians.Add(Musician);
+ 
+            var MusicianTrack = new MusicianTrack
+            {
+                IdTrack = trackId,
+                IdMusician = _context.Musicians
+                        .Where(p => p.FirstName == Musician.FirstName && p.LastName == Musician.LastName)
+                        .FirstOrDefault().IdMusician
+
+            };
+
+            _context.MusicianTracks.Add(MusicianTrack);
+            _context.SaveChanges();
+        }
+
+        public Track GetTrackByName(string trackName)
+        {
+            return _context.Tracks.SingleOrDefault(p => p.TrackName.Equals(trackName));
+        }
     }
+
+    
 }

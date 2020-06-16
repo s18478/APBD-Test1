@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Test2.Exceptions;
+using Test2.Models.DTOs.Requests;
 using Test2.Services;
 
 namespace Test2.Controllers
@@ -26,6 +27,13 @@ namespace Test2.Controllers
             {
                 return NotFound(exc.Message);
             }
+        }
+
+        [HttpPost] 
+        public IActionResult AddMusician(AddMusicianRequest request)
+        {
+            _service.AddMusician(request);
+            return Ok();
         }
 
     }
